@@ -80,8 +80,12 @@ def generate_response(chat_id: str) -> str:
         conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + messages[chat_id]
         
         response = client.chat.completions.create(
-            model="gpt-4",
-            messages=conversation_history
+            model="gpt-4o-mini",
+            messages=[
+                {"role": "system", "content": BOT_PERSONALITY},
+                {"role": "user", "content": conversation_history,
+                }
+            ]
         )
 
         # Extract the generated response
