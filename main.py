@@ -28,6 +28,19 @@ BOT_PERSONALITY = (
     "Your creator is Phoenix Admission Care."
 )
 
+# Set the Telegram webhook
+def set_webhook():
+    # The URL where your app is deployed on Render (replace <your-render-app-url> with your actual URL)
+    webhook_url = f"https://phoenix-telegram-bot-2-0.onrender.com/{TELEGRAM_TOKEN}"
+    try:
+        response = requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
+        if response.status_code == 200:
+            logger.info("Webhook set successfully.")
+        else:
+            logger.error(f"Failed to set webhook: {response.text}")
+    except Exception as e:
+        logger.error(f"Error setting webhook: {e}")
+
 # Endpoint to receive messages from Telegram
 @app.route(f'/{TELEGRAM_TOKEN}', methods=['POST'])
 def telegram_webhook():
@@ -86,5 +99,6 @@ def home():
 
 if __name__ == '__main__':
     # Set up Flask to listen on the correct port for Render
+    set_webhook()
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
