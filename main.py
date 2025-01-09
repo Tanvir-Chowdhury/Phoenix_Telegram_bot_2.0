@@ -3,7 +3,6 @@ import os
 from flask import Flask, request
 import requests
 from aiogram import Bot
-from aiogram.types import ParseMode
 
 # Flask app setup
 app = Flask(__name__)
@@ -75,7 +74,7 @@ def generate_response(user_message: str) -> str:
 def send_telegram_message(chat_id, message):
     """Send message to Telegram using bot."""
     try:
-        bot.send_message(chat_id, message, parse_mode=ParseMode.MARKDOWN)
+        bot.send_message(chat_id, message)
         logger.info(f"Sent message: {message} to chat ID: {chat_id}")
     except Exception as e:
         logger.error(f"Error sending message: {e}")
@@ -89,6 +88,3 @@ if __name__ == '__main__':
     # Set up Flask to listen on the correct port for Render
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
-
-
