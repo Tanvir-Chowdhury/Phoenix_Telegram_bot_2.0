@@ -69,7 +69,7 @@ def telegram_webhook():
     response = generate_response(chat_id)
 
     # Send the generated response to Telegram
-    asyncio.run(send_telegram_message(chat_id, response))  # Use asyncio to send the message asynchronously
+    asyncio.ensure_future(send_telegram_message(chat_id, response))  # Use asyncio to send the message asynchronously
 
     return "OK", 200
 
