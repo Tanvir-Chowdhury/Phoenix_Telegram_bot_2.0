@@ -22,6 +22,9 @@ def keep_alive():
     server.start()
 
 # Bot and OpenAI API keys
+TELEGRAM_TOKEN = "" 
+OPENAI_API_KEY = ""  
+
 
 if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
     raise ValueError("Please set TELEGRAM_TOKEN and OPENAI_API_KEY in the script.")
