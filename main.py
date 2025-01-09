@@ -13,8 +13,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Fetch Telegram and OpenAI API keys from environment variables
-TELEGRAM_TOKEN = "8078701645:AAGI970Rw9krnbfHRr-4DTh8wdQRo1vLZM4"
-OPENAI_API_KEY = "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"
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
     raise ValueError("Please set TELEGRAM_TOKEN and OPENAI_API_KEY in the environment variables.")
@@ -29,10 +29,12 @@ BOT_PERSONALITY = (
     "Your creator is Phoenix Admission Care."
 )
 
+# Create a dictionary to store conversation history for each user
+messages = {}
+
 # Set the Telegram webhook
 def set_webhook():
-    # The URL where your app is deployed on Render (replace <your-render-app-url> with your actual URL)
-    webhook_url = f"https://phoenix-telegram-bot-2-0.onrender.com/{TELEGRAM_TOKEN}"
+    webhook_url = f"https://your-app-name.onrender.com/{TELEGRAM_TOKEN}"  # Replace with your actual deployed URL
     try:
         response = requests.get(f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/setWebhook?url={webhook_url}")
         if response.status_code == 200:
@@ -55,28 +57,40 @@ def telegram_webhook():
 
     logger.info(f"Received message: {user_message} from chat ID: {chat_id}")
 
+    # Fetch or create conversation history for the user
+    if chat_id not in messages:
+        messages[chat_id] = []
+
+    # Add the new message to the history
+    messages[chat_id].append({"role": "user", "content": user_message})
+
     # Generate response from OpenAI
-    response = generate_response(user_message)
+    response = generate_response(chat_id)
 
     # Send the generated response to Telegram
     send_telegram_message(chat_id, response)
 
     return "OK", 200
 
-def generate_response(user_message: str) -> str:
-    """Generate a response using OpenAI API."""
+def generate_response(chat_id: str) -> str:
+    """Generate a response using OpenAI API with conversation history."""
     try:
         client = OpenAI(api_key=OPENAI_API_KEY)
-        # Fetch the message history for the user
-        user_messages = messages[username]
         # Include the system message at the start of the conversation
-        conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + user_messages
+        conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + messages[chat_id]
+        
         response = client.chat.completions.create(
-            model="gpt-4o-mini",
+            model="gpt-4",
             messages=conversation_history
         )
+
+        # Extract the generated response
         generated_response = response.choices[0].message.content.strip()
         logger.info(f"Response generated: {generated_response}")
+
+        # Add the assistant's response to the conversation history
+        messages[chat_id].append({"role": "assistant", "content": generated_response})
+
         return generated_response
     except Exception as e:
         logger.error(f"Error generating response: {e}")
