@@ -3,6 +3,7 @@ import os
 from flask import Flask, request
 import requests
 from aiogram import Bot
+from openai import OpenAI
 
 # Flask app setup
 app = Flask(__name__)
@@ -65,21 +66,18 @@ def telegram_webhook():
 def generate_response(user_message: str) -> str:
     """Generate a response using OpenAI API."""
     try:
-        headers = {
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {OPENAI_API_KEY}"
-        }
-
-        payload = {
-            "model": "gpt-4",
-            "messages": [{"role": "system", "content": BOT_PERSONALITY}, {"role": "user", "content": user_message}]
-        }
-
-        # Sending the request to OpenAI API
-        response = requests.post("https://api.openai.com/v1/chat/completions", json=payload, headers=headers)
-        response_data = response.json()
-        chatgpt_response = response_data['choices'][0]['message']['content']
-        return chatgpt_response.strip()
+        client = OpenAI(api_key=OPENAI_API_KEY)
+        # Fetch the message history for the user
+        user_messages = messages[username]
+        # Include the system message at the start of the conversation
+        conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + user_messages
+        response = client.chat.completions.create(
+            model="gpt-4o-mini",
+            messages=conversation_history
+        )
+        generated_response = response.choices[0].message.content.strip()
+        logger.info(f"Response generated: {generated_response}")
+        return generated_response
     except Exception as e:
         logger.error(f"Error generating response: {e}")
         return "Sorry, something went wrong while processing your request."
