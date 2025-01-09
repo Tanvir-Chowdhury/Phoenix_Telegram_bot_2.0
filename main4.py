@@ -5,6 +5,8 @@ import requests
 import asyncio
 from aiogram import Bot
 from openai import OpenAI
+from dotenv import load_dotenv, dotenv_values
+load_dotenv()
 
 # Flask app setup
 app = Flask(__name__)
@@ -14,8 +16,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Fetch Telegram and OpenAI API keys from environment variables
-TELEGRAM_TOKEN = os.environ.get('TELEGRAM_TOKEN')
-OPENAI_API_KEY = os.environ.get('OPENAI_API_KEY')
+TELEGRAM_TOKEN = os.getenv('TELEGRAM_TOKEN')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
     raise ValueError("Please set TELEGRAM_TOKEN and OPENAI_API_KEY in the environment variables.")
