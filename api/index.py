@@ -4,6 +4,7 @@ from aiogram import Bot, Dispatcher, Router, types
 from aiogram.filters import Command
 from openai import OpenAI
 from flask import Flask, request
+from aiogram.types import Update
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -88,7 +89,7 @@ def main():
 @app.route('/webhook', methods=['POST'])
 def webhook():
     update = types.Update(**request.get_json())
-    asyncio.run(dp.process_update(update))
+    asyncio.run(dp.feed_update(bot, update))
     return "OK", 200
 
 # Entry point for Vercel
