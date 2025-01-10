@@ -3,16 +3,18 @@ import asyncio
 from aiogram import Bot, Dispatcher, Router, types
 from aiogram.filters import Command
 from openai import OpenAI
-from flask import Flask, request
 from aiogram.types import Update
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+import uvicorn
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Bot and OpenAI API keys
-TELEGRAM_TOKEN = "8078701645:AAGI970Rw9krnbfHRr-4DTh8wdQRo1vLZM4" 
-OPENAI_API_KEY = "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"  
+TELEGRAM_TOKEN = "8078701645:AAGI970Rw9krnbfHRr-4DTh8wdQRo1vLZM4"
+OPENAI_API_KEY = "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"
 
 if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
     raise ValueError("Please set TELEGRAM_TOKEN and OPENAI_API_KEY in the script.")
@@ -79,22 +81,29 @@ async def echo_msg(message: types.Message):
     messages[username].append({"role": "assistant", "content": chatgpt_response})
     await message.reply(chatgpt_response, parse_mode='Markdown')
 
-# Flask app setup
-app = Flask(__name__)
+# FastAPI app setup
+app = FastAPI()
 
-@app.route('/', methods=['GET'])
-def main():
-    return "Your Bot Is Ready"
+@app.get("/")
+async def main():
+    return JSONResponse(content={"message": "Your Bot Is Ready"})
 
-@app.route('/webhook', methods=['POST'])
-def webhook():
-    update = types.Update(**request.get_json())
-    asyncio.run(dp.feed_update(bot, update))
-    return "OK", 200
+@app.post("/webhook")
+async def webhook(request: Request):
+    try:
+        update = Update(**await request.json())
+        await dp.feed_update(bot, update)
+        return JSONResponse(content={"status": "OK"})
+    except Exception as e:
+        logger.error(f"Error in webhook: {e}")
+        return JSONResponse(content={"status": "error", "message": str(e)}, status_code=500)
 
-# Entry point for Vercel
+# Include router in the dispatcher
+dp.include_router(router)
+
+# Entry point for the app
 if __name__ == "__main__":
-    from werkzeug.middleware.proxy_fix import ProxyFix
-    app.wsgi_app = ProxyFix(app.wsgi_app)
-    # app.run(host="0.0.0.0", port=8080)
-    app.run()
+    
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+
