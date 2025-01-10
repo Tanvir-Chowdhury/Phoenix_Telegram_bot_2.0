@@ -202,16 +202,34 @@ async def main():
 
 @app.post("/webhook")
 async def webhook(request: Request):
+    """Webhook endpoint to process Telegram updates."""
     try:
-        update = Update(**await request.json())
-        await dp.feed_update(bot, update)
-        return JSONResponse(content={"status": "OK"})
-    except TelegramAPIError as e:
-        logger.error(f"Telegram API Error: {e}")
-        raise HTTPException(status_code=500, detail="Telegram API Error")
+        # Parse the incoming JSON request from Telegram
+        request_data = await request.json()
+
+        # Convert JSON data to aiogram.types.Update object
+        telegram_update = Update(**request_data)
+
+        # Process the update using the dispatcher
+        await dp.process_update(telegram_update)
     except Exception as e:
         logger.error(f"Error in webhook: {e}")
-        raise HTTPException(status_code=500, detail="Internal Server Error")
+        raise HTTPException(status_code=500, detail=str(e))
+    return {"ok": True}
+
+
+# async def webhook(request: Request):
+#     try:
+#         update = Update(**await request.json())
+#         await dp.process_update(telegram_update) 
+
+#         return JSONResponse(content={"status": "OK"})
+#     except TelegramAPIError as e:
+#         logger.error(f"Telegram API Error: {e}")
+#         raise HTTPException(status_code=500, detail="Telegram API Error")
+#     except Exception as e:
+#         logger.error(f"Error in webhook: {e}")
+#         raise HTTPException(status_code=500, detail="Internal Server Error")
 
 # Bot startup and shutdown events
 @app.on_event("startup")
