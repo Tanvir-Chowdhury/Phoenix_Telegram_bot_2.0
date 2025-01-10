@@ -124,8 +124,8 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Bot and OpenAI API keys
-TELEGRAM_TOKEN = "your-telegram-bot-token"
-OPENAI_API_KEY = "your-openai-api-key"
+TELEGRAM_TOKEN = "8078701645:AAGI970Rw9krnbfHRr-4DTh8wdQRo1vLZM4"
+OPENAI_API_KEY = "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"
 
 # Initialize the bot and dispatcher
 bot = Bot(token=TELEGRAM_TOKEN)
