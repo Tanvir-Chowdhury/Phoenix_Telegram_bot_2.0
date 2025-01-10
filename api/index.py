@@ -232,16 +232,16 @@ async def webhook(request: Request):
 #         logger.error(f"Error in webhook: {e}")
 #         raise HTTPException(status_code=500, detail="Internal Server Error")
 
-# Bot startup and shutdown events
-@app.on_event("startup")
-async def on_startup():
-    logger.info("Starting bot...")
-    asyncio.create_task(dp.start_polling(bot))
+# # Bot startup and shutdown events
+# @app.on_event("startup")
+# async def on_startup():
+#     logger.info("Starting bot...")
+#     asyncio.create_task(dp.start_polling(bot))
 
-@app.on_event("shutdown")
-async def on_shutdown():
-    logger.info("Shutting down bot...")
-    await bot.session.close()
+# @app.on_event("shutdown")
+# async def on_shutdown():
+#     logger.info("Shutting down bot...")
+#     await bot.session.close()
 
 # Entry point for running the app
 if __name__ == "__main__":
