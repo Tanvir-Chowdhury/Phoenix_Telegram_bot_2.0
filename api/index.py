@@ -125,7 +125,8 @@ logger = logging.getLogger(__name__)
 
 # Bot and OpenAI API keys
 TELEGRAM_TOKEN = "8078701645:AAGI970Rw9krnbfHRr-4DTh8wdQRo1vLZM4"
-OPENAI_API_KEY = "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"
+OPENAI_API_KEY = "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"
+# OPENAI_API_KEY = "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"
 
 # Initialize the bot and dispatcher
 bot = Bot(token=TELEGRAM_TOKEN)
