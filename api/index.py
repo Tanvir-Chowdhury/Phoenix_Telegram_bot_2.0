@@ -212,7 +212,7 @@ async def webhook(request: Request):
 
         # Process the update using the dispatcher
         # await dp.process_update(telegram_update)
-        await dp.feed_update(bot, telegram_update)
+        asyncio.create_task(dp.feed_update(bot, telegram_update)) 
     except Exception as e:
         logger.error(f"Error in webhook: {e}")
         raise HTTPException(status_code=500, detail=str(e))
