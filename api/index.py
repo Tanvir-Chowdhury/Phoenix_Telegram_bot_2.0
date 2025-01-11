@@ -234,6 +234,9 @@ async def echo_msg(message: types.Message):
     # Generate a response using OpenAI
     chatgpt_response = await generate_response(username)
 
+     # Notify the user that the bot is typing
+    await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+
     # Add the bot's response to the message history
     messages[username].append({"role": "assistant", "content": chatgpt_response})
 
