@@ -192,7 +192,7 @@ async def start_cmd(message: types.Message):
     await message.answer("Hello, I'm Phoenix. How can I help you today?")
 
 # Handle the /newtopic command
-@router.message(Command("clearCache"))
+@router.message(Command("clear_cache"))
 async def new_topic_cmd(message: types.Message):
     try:
         username = message.from_user.username
@@ -200,7 +200,7 @@ async def new_topic_cmd(message: types.Message):
         await message.answer("Please set a username in Telegram settings and try again.")
         return
     messages[username] = []
-    await message.answer("Created new chat!")
+    await message.answer("Cleared the chat history!")
 
 # Handle the /help command
 @router.message(Command("help"))
