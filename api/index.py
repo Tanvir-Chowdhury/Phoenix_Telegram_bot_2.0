@@ -205,7 +205,7 @@ async def new_topic_cmd(message: types.Message):
 # Handle the /help command
 @router.message(Command("help"))
 async def help_cmd(message: types.Message):
-    help_text = "/help - Show this help message\n/newtopic - Start a new chat\n"
+    help_text = "/phoenix - Start the chat\n/help - Show this help message\n/clear_cache - Clear the chat history\n"
     await message.answer(help_text)
 
 # Handle all other messages
