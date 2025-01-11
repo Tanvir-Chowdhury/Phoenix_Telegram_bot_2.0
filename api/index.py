@@ -181,7 +181,7 @@ async def generate_response(username: str) -> str:
         return "Sorry, something went wrong while processing your request."
 
 # Handle the /start command
-@router.message(Command("start"))
+@router.message(Command("phoenix"))
 async def start_cmd(message: types.Message):
     try:
         username = message.from_user.username
@@ -192,7 +192,7 @@ async def start_cmd(message: types.Message):
     await message.answer("Hello, I'm Phoenix. How can I help you today?")
 
 # Handle the /newtopic command
-@router.message(Command("newtopic"))
+@router.message(Command("clearCache"))
 async def new_topic_cmd(message: types.Message):
     try:
         username = message.from_user.username
