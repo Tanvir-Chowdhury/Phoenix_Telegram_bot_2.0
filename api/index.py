@@ -352,42 +352,155 @@ async def help_cmd(message: types.Message):
     await message.answer(help_text)
 
 # Handle all other messages
-@router.message()
-async def echo_msg(message: types.Message):
-    user_message = message.text
+# @router.message(lambda msg: msg.photo)
+# async def echo_msg(message: types.Message):
+#     user_message = message.text
+#     try:
+#         username = message.from_user.username
+#     except AttributeError:
+#         await message.answer("Please set a username in Telegram settings and try again.")
+#         return
+
+#     # If this is the first message from the user, initialize their message history
+#     if username not in messages:
+#         messages[username] = []
+
+#     # Add the user's message to their message history
+#     messages[username].append({"role": "user", "content": user_message})
+
+#     # Log the user's message
+#     logging.info(f'{username}: {user_message}')
+
+#     # Notify the user that the bot is typing
+#     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+
+#     # Generate a response using OpenAI
+#     chatgpt_response = await generate_response(username)
+
+#      # Notify the user that the bot is typing
+#     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+
+#     # Add the bot's response to the message history
+#     messages[username].append({"role": "assistant", "content": chatgpt_response})
+
+#     # Log the bot's response
+#     logging.info(f'ChatGPT response: {chatgpt_response}')
+
+#     # Send the bot's response to the chat
+#     await message.reply(chatgpt_response, parse_mode='Markdown')
+
+@router.message(lambda msg: True)
+async def handle_message(message: types.Message):
     try:
         username = message.from_user.username
     except AttributeError:
         await message.answer("Please set a username in Telegram settings and try again.")
         return
 
-    # If this is the first message from the user, initialize their message history
+    # Initialize message history for the user if not already present
     if username not in messages:
         messages[username] = []
 
-    # Add the user's message to their message history
-    messages[username].append({"role": "user", "content": user_message})
+    # Handle text and photo messages with if-else
+    if message.photo:
+        # Handle image messages
+        try:
+            # Notify the user that the bot is processing the image
+            await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
-    # Log the user's message
-    logging.info(f'{username}: {user_message}')
+            # Get the file_id of the largest photo
+            file_id = message.photo[-1].file_id
 
-    # Notify the user that the bot is typing
-    await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+            # Download the photo
+            file = await bot.get_file(file_id)
+            file_data = await bot.download_file(file.file_path)
 
-    # Generate a response using OpenAI
-    chatgpt_response = await generate_response(username)
+            # Convert to JPEG if needed
+            try:
+                image = Image.open(BytesIO(file_data))
+                output = BytesIO()
+                image.convert("RGB").save(output, format="JPEG")
+                file_data = output.getvalue()  # Update the file_data with JPEG content
+                logging.info("Converted image to JPEG format")
+            except Exception as e:
+                logging.error(f"Error processing image format: {str(e)}")
+                await message.reply("Failed to process the image format.")
+                return
 
-     # Notify the user that the bot is typing
-    await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+            # Upload image to ImgBB
+            image_url = upload_image_to_imgbb(file_data)
+            if not image_url:
+                await message.reply("Failed to upload image to ImgBB.")
+                return
 
-    # Add the bot's response to the message history
-    messages[username].append({"role": "assistant", "content": chatgpt_response})
+            # Prompt text accompanying the image
+            user_message = message.caption if message.caption else "Please analyze the image."
 
-    # Log the bot's response
-    logging.info(f'ChatGPT response: {chatgpt_response}')
+            # Log the user's message and the image processing action
+            logging.info(f'{username} sent an image with prompt: {user_message}')
 
-    # Send the bot's response to the chat
-    await message.reply(chatgpt_response, parse_mode='Markdown')
+            # Add the user's message and image URL to their message history
+            messages[username].append({"role": "user", "content": user_message})
+            messages[username].append({"role": "user", "content": image_url})
+
+            # Notify the user that the bot is processing the image
+            await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+
+            # Generate a response using OpenAI Vision API
+            for attempt in range(3):
+                logging.info(f"Sending image URL to OpenAI Vision API: {image_url}")
+                response = client.chat.completions.create(
+                    model="gpt-4o-mini",
+                    messages=[
+                        {
+                            "role": "user",
+                            "content": [
+                                {"type": "text", "text": user_message},
+                                {"type": "image_url", "image_url": {"url": image_url}}
+                            ]
+                        }
+                    ],
+                    max_tokens=1000,
+                )
+                if response:
+                    break
+
+            chatgpt_response = response.choices[0].message.content.strip()
+
+            # Add the bot's response to the message history
+            messages[username].append({"role": "assistant", "content": chatgpt_response})
+
+            # Send the bot's response to the user
+            await message.reply(chatgpt_response, parse_mode='Markdown')
+
+        except Exception as e:
+            logging.error(f"Error processing image or generating response: {e}")
+            await message.answer("Sorry, something went wrong while processing your image.")
+    else:
+        # Handle text messages
+        user_message = message.text
+
+        # Add the user's message to their message history
+        messages[username].append({"role": "user", "content": user_message})
+
+        # Log the user's message
+        logging.info(f'{username}: {user_message}')
+
+        # Notify the user that the bot is typing
+        await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+
+        # Generate a response using OpenAI
+        chatgpt_response = await generate_response(username)
+
+        # Add the bot's response to the message history
+        messages[username].append({"role": "assistant", "content": chatgpt_response})
+
+        # Log the bot's response
+        logging.info(f'ChatGPT response: {chatgpt_response}')
+
+        # Send the bot's response to the chat
+        await message.reply(chatgpt_response, parse_mode='Markdown')
+
 
 async def main():
     # Set up the bot and dispatcher
