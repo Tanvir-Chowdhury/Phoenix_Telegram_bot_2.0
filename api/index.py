@@ -118,6 +118,7 @@ from threading import Thread
 from openai import OpenAI
 from io import BytesIO
 from PIL import Image
+import base64
 
 # Flask app setup
 app = Flask(__name__)
@@ -182,7 +183,12 @@ async def generate_response(username: str) -> str:
         logger.error(f"Error generating response: {e}")
         return "Sorry, something went wrong while processing your request."
 
-# Handle image messages
+
+# Helper function to encode an image as Base64
+def encode_image(image_bytes):
+    """Encodes image bytes to a Base64 string."""
+    return base64.b64encode(image_bytes).decode('utf-8')
+
 @router.message(lambda msg: msg.photo)
 async def process_image(message: types.Message):
     try:
@@ -191,7 +197,7 @@ async def process_image(message: types.Message):
         await message.answer("Please set a username in Telegram settings and try again.")
         return
 
-    # If this is the first interaction from the user, initialize their message history
+    # Initialize message history for the user if not already present
     if username not in messages:
         messages[username] = []
 
@@ -200,54 +206,41 @@ async def process_image(message: types.Message):
     
     # Get the file_id of the largest photo
     file_id = message.photo[-1].file_id
-    
+
     # Download the photo
-    file = await bot.get_file(file_id)
-    file_path = file.file_path
-    print(file_path)
-    # photo_bytes = await bot.download_file(file_path)
-
-    # Load the image using PIL for further processing
-    # image = Image.open(BytesIO(photo_bytes))
-
-    # Prompt text accompanying the image
-    user_message = message.caption if message.caption else "No prompt provided."
-
-    # Log the user's message and the image processing action
-    logging.info(f'{username} sent an image with prompt: {user_message}')
-
-    # Add the user's message and image metadata to their message history
-    messages[username].append({
-            "role": "user",
-            "content": [
-                {"type": "text", "text": user_message},
-                {
-                    "type": "image_url",
-                    "image_url": {
-                        "url": str(file_path),
-                    },
-                },
-            ],
-        })
-    # messages[username].append({"role": "user", "content": file_path})
-    # Convert the image to a format that can be sent to OpenAI (base64 or similar if needed)
-    # For now, we log the image as metadata.
-    # Note: If OpenAI API supports direct image input, you can encode and send the image.
-    await bot.send_chat_action(chat_id=message.chat.id, action="typing")
-    # Example payload to OpenAI API (with metadata for the image and prompt)
     try:
+        file = await bot.get_file(file_id)
+        photo_bytes = await bot.download_file(file.file_path)
+
+        # Encode the image to Base64
+        base64_image = encode_image(photo_bytes)
+
+        # Prompt text accompanying the image
+        user_message = message.caption if message.caption else "Please analyze the image."
+
+        # Log the user's message and the image processing action
+        logging.info(f'{username} sent an image with prompt: {user_message}')
+
+        # Add the user's message and encoded image to their message history
+        messages[username].append({"role": "user", "content": user_message})
+        messages[username].append({"role": "user", "content": f"data:image/png;base64,{base64_image}"})
+
+        # Prepare the conversation history for the OpenAI API
+        conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + messages[username]
+
+        # Notify the user that the bot is processing the image
+        await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+
         # Generate a response using OpenAI API
         client = OpenAI(api_key=OPENAI_API_KEY)
-        conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + messages[username]
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=conversation_history
         )
         chatgpt_response = response.choices[0].message.content.strip()
 
+        # Notify the user that the bot is processing the image
         await bot.send_chat_action(chat_id=message.chat.id, action="typing")
-        # Log the bot's response
-        logging.info(f'ChatGPT response: {chatgpt_response}')
 
         # Add the bot's response to the message history
         messages[username].append({"role": "assistant", "content": chatgpt_response})
@@ -258,6 +251,7 @@ async def process_image(message: types.Message):
     except Exception as e:
         logging.error(f"Error processing image or generating response: {e}")
         await message.answer("Sorry, something went wrong while processing your image.")
+
 
 # Handle the /start command
 @router.message(Command("phoenix"))
