@@ -204,6 +204,7 @@ async def process_image(message: types.Message):
     # Download the photo
     file = await bot.get_file(file_id)
     file_path = file.file_path
+    print(file_path)
     # photo_bytes = await bot.download_file(file_path)
 
     # Load the image using PIL for further processing
