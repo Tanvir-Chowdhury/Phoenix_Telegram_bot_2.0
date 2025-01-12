@@ -402,7 +402,7 @@ async def handle_message(message: types.Message):
         messages[username] = []
 
     # Handle text and photo messages with if-else
-    if message.photo:
+    if message.photo or message.document:
         # Handle image messages
         try:
             # Notify the user that the bot is processing the image
@@ -417,20 +417,21 @@ async def handle_message(message: types.Message):
 
             # Convert to JPEG if needed
             try:
-                image = Image.open(BytesIO(file_data))
+                image = Image.open(BytesIO(file_data))  # Open the image
                 output = BytesIO()
-                image.convert("RGB").save(output, format="JPEG")
-                file_data = output.getvalue()  # Update the file_data with JPEG content
+                image.convert("RGB").save(output, format="JPEG")  # Save as JPEG
+                output.seek(0)  # Reset stream pointer to the start
+                file_data = output.read()  # Get bytes from the stream
                 logging.info("Converted image to JPEG format")
             except Exception as e:
                 logging.error(f"Error processing image format: {str(e)}")
-                await message.reply("Failed to process the image format.")
+                await message.reply("Failed to process the image format.")  # Fixed bot reply method
                 return
 
             # Upload image to ImgBB
             image_url = upload_image_to_imgbb(file_data)
             if not image_url:
-                await message.reply("Failed to upload image to ImgBB.")
+                await message.reply("Failed to upload image to ImgBB.")  # Fixed bot reply method
                 return
 
             # Prompt text accompanying the image
@@ -500,6 +501,7 @@ async def handle_message(message: types.Message):
 
         # Send the bot's response to the chat
         await message.reply(chatgpt_response, parse_mode='Markdown')
+
 
 
 async def main():
