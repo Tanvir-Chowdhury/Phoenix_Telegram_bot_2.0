@@ -224,7 +224,7 @@ async def process_image(message: types.Message):
                 {
                     "type": "image_url",
                     "image_url": {
-                        "url": file_path,
+                        "url": str(file_path),
                     },
                 },
             ],
