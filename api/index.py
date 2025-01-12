@@ -416,23 +416,24 @@ async def handle_message(message: types.Message):
             file_data = await bot.download_file(file.file_path)
 
             # Convert to JPEG if needed
-            # try:
-            #     image = Image.open(BytesIO(file_data))  # Open the image
-            #     output = BytesIO()
-            #     image.convert("RGB").save(output, format="JPEG")  # Save as JPEG
-            #     output.seek(0)  # Reset stream pointer to the start
-            #     file_data = output.read()  # Get bytes from the stream
-            #     logging.info("Converted image to JPEG format")
-            # except Exception as e:
-            #     logging.error(f"Error processing image format: {str(e)}")
-            #     await message.reply("Failed to process the image format.")  # Fixed bot reply method
-            #     return
+            try:
+                image = Image.open(BytesIO(file_data))  # Open the image
+                output = BytesIO()
+                image.convert("RGB").save(output, format="JPEG")  # Save as JPEG
+                output.seek(0)  # Reset stream pointer to the start
+                file_data = output.read()  # Get bytes from the stream
+                logging.info("Converted image to JPEG format")
+            except Exception as e:
+                logging.error(f"Error processing image format: {str(e)}")
+                await message.reply("Failed to process the image format.")  # Fixed bot reply method
+                return
 
             # Upload image to ImgBB
-            image_url = upload_image_to_imgbb(file_data)
-            if not image_url:
-                await message.reply("Failed to upload image to ImgBB.")  # Fixed bot reply method
-                return
+            # image_url = upload_image_to_imgbb(file_data)
+            encoded_image = base64.b64encode(file_data.read()).decode('utf-8')
+            # if not image_url:
+            #     await message.reply("Failed to upload image to ImgBB.")  # Fixed bot reply method
+            #     return
 
             # Prompt text accompanying the image
             user_message = message.caption if message.caption else "Please analyze the image."
@@ -442,14 +443,14 @@ async def handle_message(message: types.Message):
 
             # Add the user's message and image URL to their message history
             messages[username].append({"role": "user", "content": user_message})
-            messages[username].append({"role": "user", "content": image_url})
+            messages[username].append({"role": "user", "content": f"data:image/png;base64,{encoded_image}"})
 
             # Notify the user that the bot is processing the image
             await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
             # Generate a response using OpenAI Vision API
             for attempt in range(3):
-                logging.info(f"Sending image URL to OpenAI Vision API: {image_url}")
+                logging.info(f"Sending image URL to OpenAI Vision API: {encoded_image}")
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
                     messages=[
@@ -457,7 +458,7 @@ async def handle_message(message: types.Message):
                             "role": "user",
                             "content": [
                                 {"type": "text", "text": user_message},
-                                {"type": "image_url", "image_url": {"url": image_url}}
+                                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded_image}"}}
                             ]
                         }
                     ],
