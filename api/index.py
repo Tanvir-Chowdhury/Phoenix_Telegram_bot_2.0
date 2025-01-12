@@ -416,17 +416,17 @@ async def handle_message(message: types.Message):
             file_data = await bot.download_file(file.file_path)
 
             # Convert to JPEG if needed
-            try:
-                image = Image.open(BytesIO(file_data))  # Open the image
-                output = BytesIO()
-                image.convert("RGB").save(output, format="JPEG")  # Save as JPEG
-                output.seek(0)  # Reset stream pointer to the start
-                file_data = output.read()  # Get bytes from the stream
-                logging.info("Converted image to JPEG format")
-            except Exception as e:
-                logging.error(f"Error processing image format: {str(e)}")
-                await message.reply("Failed to process the image format.")  # Fixed bot reply method
-                return
+            # try:
+            #     image = Image.open(BytesIO(file_data))  # Open the image
+            #     output = BytesIO()
+            #     image.convert("RGB").save(output, format="JPEG")  # Save as JPEG
+            #     output.seek(0)  # Reset stream pointer to the start
+            #     file_data = output.read()  # Get bytes from the stream
+            #     logging.info("Converted image to JPEG format")
+            # except Exception as e:
+            #     logging.error(f"Error processing image format: {str(e)}")
+            #     await message.reply("Failed to process the image format.")  # Fixed bot reply method
+            #     return
 
             # Upload image to ImgBB
             image_url = upload_image_to_imgbb(file_data)
