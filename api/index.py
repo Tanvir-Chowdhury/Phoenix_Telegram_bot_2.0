@@ -190,13 +190,13 @@ async def generate_response(username: str) -> str:
 def upload_image_to_imgbb(file_data):
     try:
         # Ensure that the image is saved in JPEG format
-        image = Image.open(BytesIO(file_data))
-        output = BytesIO()
-        image.convert("RGB").save(output, format="JPEG")
-        output.seek(0)
+        image = Image.open(file_data)
+        # output = BytesIO()
+        # image.convert("RGB").save(output, format="JPEG")
+        # output.seek(0)
 
         # Convert the image to base64
-        encoded_image = base64.b64encode(output.getvalue()).decode('utf-8')
+        encoded_image = base64.b64encode(image.read()).decode('utf-8')
 
         # Prepare the request to ImgBB
         url = "https://api.imgbb.com/1/upload"
@@ -222,105 +222,105 @@ def upload_image_to_imgbb(file_data):
 
 
 
-@router.message(lambda msg: msg.photo)
-async def process_image(message: types.Message):
-    try:
-        username = message.from_user.username
-    except AttributeError:
-        await message.answer("Please set a username in Telegram settings and try again.")
-        return
+# @router.message(lambda msg: msg.photo)
+# async def process_image(message: types.Message):
+#     try:
+#         username = message.from_user.username
+#     except AttributeError:
+#         await message.answer("Please set a username in Telegram settings and try again.")
+#         return
 
-    # Initialize message history for the user if not already present
-    if username not in messages:
-        messages[username] = []
+#     # Initialize message history for the user if not already present
+#     if username not in messages:
+#         messages[username] = []
 
-    # Notify the user that the bot is processing the image
-    await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+#     # Notify the user that the bot is processing the image
+#     await bot.send_chat_action(chat_id=message.chat.id, action="typing")
     
-    # Get the file_id of the largest photo
-    file_id = message.photo[-1].file_id
+#     # Get the file_id of the largest photo
+#     file_id = message.photo[-1].file_id
 
-    # Download the photo
-    try:
-        file = await bot.get_file(file_id)
-        file_data = await bot.download_file(file.file_path)
+#     # Download the photo
+#     try:
+#         file = await bot.get_file(file_id)
+#         file_data = await bot.download_file(file.file_path)
 
 
-        # Convert to JPEG if needed
-        try:
-            image = Image.open(BytesIO(file_data))
-            output = BytesIO()
-            image.convert("RGB").save(output, format="JPEG")
-            file_data = output.getvalue()  # Update the file_data with JPEG content
-            logging.info("Converted image to JPEG format")
-        except Exception as e:
-            logging.error(f"Error processing image format: {str(e)}")
-            bot.reply_to(message, "Failed to process the image format.")
-            return
+#         # Convert to JPEG if needed
+#         try:
+#             image = Image.open(BytesIO(file_data))
+#             output = BytesIO()
+#             image.convert("RGB").save(output, format="JPEG")
+#             file_data = output.getvalue()  # Update the file_data with JPEG content
+#             logging.info("Converted image to JPEG format")
+#         except Exception as e:
+#             logging.error(f"Error processing image format: {str(e)}")
+#             bot.reply_to(message, "Failed to process the image format.")
+#             return
         
-        # Upload image to ImgBB
-        image_url = upload_image_to_imgbb(file_data)
-        if not image_url:
-            bot.reply_to(message, "Failed to upload image to ImgBB.")
-            return
+#         # Upload image to ImgBB
+#         image_url = upload_image_to_imgbb(file_data)
+#         if not image_url:
+#             bot.reply_to(message, "Failed to upload image to ImgBB.")
+#             return
 
-        # Encode the image to Base64
-        # base64_image = encode_image(photo_bytes)
+#         # Encode the image to Base64
+#         # base64_image = encode_image(photo_bytes)
 
-        # Prompt text accompanying the image
-        user_message = message.caption if message.caption else "Please analyze the image."
+#         # Prompt text accompanying the image
+#         user_message = message.caption if message.caption else "Please analyze the image."
 
-        # Log the user's message and the image processing action
-        logging.info(f'{username} sent an image with prompt: {user_message}')
+#         # Log the user's message and the image processing action
+#         logging.info(f'{username} sent an image with prompt: {user_message}')
 
-        # Add the user's message and encoded image to their message history
-        messages[username].append({"role": "user", "content": user_message})
-        messages[username].append({"role": "user", "content": image_url})
+#         # Add the user's message and encoded image to their message history
+#         messages[username].append({"role": "user", "content": user_message})
+#         messages[username].append({"role": "user", "content": image_url})
 
-        # Prepare the conversation history for the OpenAI API
-        # conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + messages[username]
+#         # Prepare the conversation history for the OpenAI API
+#         # conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + messages[username]
 
-        # Notify the user that the bot is processing the image
-        await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+#         # Notify the user that the bot is processing the image
+#         await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
-        for attempt in range(3):
-            # Log the image URL being sent
-            logging.info(f"Sending image URL to OpenAI Vision API: {image_url}")
+#         for attempt in range(3):
+#             # Log the image URL being sent
+#             logging.info(f"Sending image URL to OpenAI Vision API: {image_url}")
 
-            response = client.chat.completions.create(
-                model="gpt-4o-mini",  # Ensure you're using the correct GPT-4 Vision model
-                messages=[
-                    {
-                        "role": "user",
-                        "content": [
-                            {"type": "text", "text": user_message},
-                            {
-                                "type": "image_url",
-                                "image_url": {
-                                    "url": image_url
-                                }
-                            }
-                        ]
-                    }
-                ],
-                max_tokens=1000,
-            )
+#             response = client.chat.completions.create(
+#                 model="gpt-4o-mini",  # Ensure you're using the correct GPT-4 Vision model
+#                 messages=[
+#                     {
+#                         "role": "user",
+#                         "content": [
+#                             {"type": "text", "text": user_message},
+#                             {
+#                                 "type": "image_url",
+#                                 "image_url": {
+#                                     "url": image_url
+#                                 }
+#                             }
+#                         ]
+#                     }
+#                 ],
+#                 max_tokens=1000,
+#             )
         
 
-        chatgpt_response = response.choices[0].message.content.strip()
+#         chatgpt_response = response.choices[0].message.content.strip()
 
-        # Notify the user that the bot is processing the image
-        await bot.send_chat_action(chat_id=message.chat.id, action="typing")
+#         # Notify the user that the bot is processing the image
+#         await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
-        # Add the bot's response to the message history
-        messages[username].append({"role": "assistant", "content": chatgpt_response})
+#         # Add the bot's response to the message history
+#         messages[username].append({"role": "assistant", "content": chatgpt_response})
 
-        # Send the bot's response to the user
-        await message.reply(chatgpt_response, parse_mode='Markdown')
+#         # Send the bot's response to the user
+#         await message.reply(chatgpt_response, parse_mode='Markdown')
 
-    except Exception as e:
-        logging.error(f"Error processing image or generating response: {e}")
-        await message.answer("Sorry, something went wrong while processing your image.")
+#     except Exception as e:
+#         logging.error(f"Error processing image or generating response: {e}")
+#         await message.answer("Sorry, something went wrong while processing your image.")
 
 
 # Handle the /start command
