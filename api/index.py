@@ -119,6 +119,7 @@ from openai import OpenAI
 from io import BytesIO
 from PIL import Image
 import base64
+import requests
 
 # Flask app setup
 app = Flask(__name__)
@@ -162,12 +163,13 @@ BOT_PERSONALITY = (
 
 # Create a dictionary to store messages for each user
 messages = {}
+client = OpenAI(api_key=OPENAI_API_KEY)
 
 async def generate_response(username: str) -> str:
     """Generate a response using OpenAI API."""
     logger.info(f"Generating response for user: {username}")
     try:
-        client = OpenAI(api_key=OPENAI_API_KEY)
+        
         # Fetch the message history for the user
         user_messages = messages[username]
         # Include the system message at the start of the conversation
@@ -184,10 +186,41 @@ async def generate_response(username: str) -> str:
         return "Sorry, something went wrong while processing your request."
 
 
-# Helper function to encode an image as Base64
-def encode_image(image_bytes):
-    """Encodes image bytes to a Base64 string."""
-    return base64.b64encode(image_bytes).decode('utf-8')
+# Function to upload the image to ImgBB
+def upload_image_to_imgbb(file_data):
+    try:
+        # Ensure that the image is saved in JPEG format
+        image = Image.open(BytesIO(file_data))
+        output = BytesIO()
+        image.convert("RGB").save(output, format="JPEG")
+        output.seek(0)
+
+        # Convert the image to base64
+        encoded_image = base64.b64encode(output.getvalue()).decode('utf-8')
+
+        # Prepare the request to ImgBB
+        url = "https://api.imgbb.com/1/upload"
+        payload = {
+            "key": "c90d51820f6ac98aaac3a710e84371a4",
+            "image": encoded_image
+        }
+
+        response = requests.post(url, data=payload)
+        logging.info(f"ImgBB response status code: {response.status_code}")
+        logging.info(f"ImgBB response text: {response.text}")
+
+        if response.status_code == 200:
+            result = response.json()
+            logging.info(f"Image uploaded successfully to ImgBB: {result['data']['url']}")
+            return result['data']['url']
+        else:
+            logging.error(f"Failed to upload image to ImgBB: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        logging.error(f"Exception during image upload to ImgBB: {str(e)}")
+        return None
+
+
 
 @router.message(lambda msg: msg.photo)
 async def process_image(message: types.Message):
@@ -210,10 +243,29 @@ async def process_image(message: types.Message):
     # Download the photo
     try:
         file = await bot.get_file(file_id)
-        photo_bytes = await bot.download_file(file.file_path)
+        file_data = await bot.download_file(file.file_path)
+
+
+        # Convert to JPEG if needed
+        try:
+            image = Image.open(BytesIO(file_data))
+            output = BytesIO()
+            image.convert("RGB").save(output, format="JPEG")
+            file_data = output.getvalue()  # Update the file_data with JPEG content
+            logging.info("Converted image to JPEG format")
+        except Exception as e:
+            logging.error(f"Error processing image format: {str(e)}")
+            bot.reply_to(message, "Failed to process the image format.")
+            return
+        
+        # Upload image to ImgBB
+        image_url = upload_image_to_imgbb(file_data)
+        if not image_url:
+            bot.reply_to(message, "Failed to upload image to ImgBB.")
+            return
 
         # Encode the image to Base64
-        base64_image = encode_image(photo_bytes)
+        # base64_image = encode_image(photo_bytes)
 
         # Prompt text accompanying the image
         user_message = message.caption if message.caption else "Please analyze the image."
@@ -223,20 +275,38 @@ async def process_image(message: types.Message):
 
         # Add the user's message and encoded image to their message history
         messages[username].append({"role": "user", "content": user_message})
-        messages[username].append({"role": "user", "content": f"data:image/png;base64,{base64_image}"})
+        messages[username].append({"role": "user", "content": image_url})
 
         # Prepare the conversation history for the OpenAI API
-        conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + messages[username]
+        # conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + messages[username]
 
         # Notify the user that the bot is processing the image
         await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
-        # Generate a response using OpenAI API
-        client = OpenAI(api_key=OPENAI_API_KEY)
-        response = client.chat.completions.create(
-            model="gpt-4o-mini",
-            messages=conversation_history
-        )
+        for attempt in range(3):
+            # Log the image URL being sent
+            logging.info(f"Sending image URL to OpenAI Vision API: {image_url}")
+
+            response = client.chat.completions.create(
+                model="gpt-4o-mini",  # Ensure you're using the correct GPT-4 Vision model
+                messages=[
+                    {
+                        "role": "user",
+                        "content": [
+                            {"type": "text", "text": user_message},
+                            {
+                                "type": "image_url",
+                                "image_url": {
+                                    "url": image_url
+                                }
+                            }
+                        ]
+                    }
+                ],
+                max_tokens=1000,
+            )
+        
+
         chatgpt_response = response.choices[0].message.content.strip()
 
         # Notify the user that the bot is processing the image
