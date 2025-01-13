@@ -126,7 +126,10 @@ async def handle_message(message: types.Message):
             await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
             # Get the file_id of the largest photo
-            file_id = message.photo[-1].file_id
+            if message.photo:
+                file_id = message.photo[-1].file_id
+            else:
+                file_id = message.document.file_id
 
             # Download the photo
             file = await bot.get_file(file_id)
