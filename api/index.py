@@ -156,7 +156,7 @@ async def handle_message(message: types.Message):
                         {
                             "role": "user",
                             "content": [
-                                {"type": "text", "text": user_message},
+                                {"type": "text", "text": BOT_PERSONALITY + user_message},
                                 {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded_image}"}}
                             ]
                         }
