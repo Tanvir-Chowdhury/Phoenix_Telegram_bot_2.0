@@ -141,30 +141,27 @@ async def handle_message(message: types.Message):
             logging.info(f'{username} sent an image with prompt: {user_message}')
 
             # Add the user's message and image URL to their message history
-            messages[username].append({"role": "user", "content": user_message})
-            messages[username].append({"role": "user", "content": f"data:image/png;base64,{encoded_image}"})
+            messages[username].append({"role": "user", "content": [
+                                {"type": "text", "text": BOT_PERSONALITY + user_message},
+                                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded_image}"}}
+                            ]})
+            # messages[username].append({"role": "user", "content": f"data:image/png;base64,{encoded_image}"})
 
             # Notify the user that the bot is processing the image
             await bot.send_chat_action(chat_id=message.chat.id, action="typing")
-
+            conversation_history = [{"role": "system", "content": BOT_PERSONALITY}] + message[username]
             # Generate a response using OpenAI Vision API
             for attempt in range(3):
                 logging.info(f"Sending image URL to OpenAI Vision API: {encoded_image}")
                 response = client.chat.completions.create(
                     model="gpt-4o-mini",
-                    messages=[
-                        {
-                            "role": "user",
-                            "content": [
-                                {"type": "text", "text": BOT_PERSONALITY + user_message},
-                                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{encoded_image}"}}
-                            ]
-                        }
-                    ],
-                    max_tokens=1000,
+                    messages=conversation_history
                 )
                 if response:
                     break
+
+            # Notify the user that the bot is processing the image
+            await bot.send_chat_action(chat_id=message.chat.id, action="typing")
 
             chatgpt_response = response.choices[0].message.content.strip()
 
