@@ -27,7 +27,7 @@ def keep_alive():
 
 # Bot and OpenAI API keys
 TELEGRAM_TOKEN = "8078701645:AAGI970Rw9krnbfHRr-4DTh8wdQRo1vLZM4" 
-OPENAI_API_KEY = "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"  
+OPENAI_API_KEY = "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"  
 
 if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
     raise ValueError("Please set TELEGRAM_TOKEN and OPENAI_API_KEY in the script.")
