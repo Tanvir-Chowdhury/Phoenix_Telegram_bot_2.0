@@ -7,7 +7,7 @@ Students can mention this bot in Telegram groups to ask questions, clear doubts 
 
 ---
 
-## 📌 Project Overview
+## Project Overview
 
 * **Bot Name:** Phoenix
 * **Platform:** Telegram
@@ -23,45 +23,45 @@ Phoenix behaves like a **helpful human friend**, not a formal assistant or AI, m
 
 ---
 
-## ✨ Key Features
+## Key Features
 
-### ✅ Telegram Bot Integration
+### Telegram Bot Integration
 
 * Works in **Telegram groups**
 * Students can mention the bot and ask questions
 
-### ✅ Subject-wise Assistance
+### Subject-wise Assistance
 
 * Mathematics (Admission-level problems)
 * English (Grammar, vocabulary, comprehension)
 * Logical & Analytical questions
 * General admission guidance
 
-### ✅ Image-Based Question Solving
+### Image-Based Question Solving
 
 * Students can send **photos or scanned questions**
 * The bot analyzes the image and explains the solution
 
-### ✅ Conversational Memory
+### Conversational Memory
 
 * Maintains **chat history per user**
 * Allows contextual follow-up questions
 * `/clear_cache` command resets conversation
 
-### ✅ Human-like Personality
+### Human-like Personality
 
 * Friendly tone
 * Simple explanations
 * No AI disclosure
 * Acts as a senior helping junior students
 
-### ✅ Web Server Keep-Alive
+### Web Server Keep-Alive
 
 * Flask server ensures bot stays alive on cloud platforms
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Component            | Technology              |
 | -------------------- | ----------------------- |
@@ -75,13 +75,13 @@ Phoenix behaves like a **helpful human friend**, not a formal assistant or AI, m
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 > All logic is handled inside a single Python file for simplicity and easy deployment.
 
 ---
 
-## 🔐 Environment Setup
+## Environment Setup
 
 ### 1️⃣ Install Dependencies
 
@@ -103,7 +103,7 @@ Never expose API keys publicly in production. Use environment variables instead.
 
 ---
 
-## ▶️ How to Run the Bot
+## How to Run the Bot
 
 ```bash
 python main.py
@@ -116,7 +116,7 @@ Once running:
 
 ---
 
-## 🤖 Bot Commands
+## Bot Commands
 
 | Command        | Description                 |
 | -------------- | --------------------------- |
@@ -126,7 +126,7 @@ Once running:
 
 ---
 
-## �� How the Bot Works
+## How the Bot Works
 
 1. User sends a **text or image**
 2. Message is stored in a **user-specific memory**
@@ -139,7 +139,7 @@ Once running:
 
 ---
 
-## 🖼️ Image Question Flow
+## Image Question Flow
 
 * Student uploads a photo of a question
 * Bot:
@@ -151,7 +151,7 @@ Once running:
 
 ---
 
-## 🎯 Use Case Example
+## Use Case Example
 
 > A student sends:
 >
@@ -164,7 +164,7 @@ This makes Phoenix a true **study companion**, not just a Q&A bot.
 
 ---
 
-## 🏫 Organization Behind the Project
+## Organization Behind the Project
 
 **Phoenix Education**
 An education-focused initiative helping Bangladeshi students prepare for private university admission tests through guidance, mentoring, and providing resources.
@@ -180,7 +180,7 @@ An education-focused initiative helping Bangladeshi students prepare for private
 
 ---
 
-## 🚀 Future Improvements
+## Future Improvements
 
 * Subject-specific modes (Math-only, English-only)
 * Admin broadcast system
@@ -190,7 +190,7 @@ An education-focused initiative helping Bangladeshi students prepare for private
 
 ---
 
-## ❤️ Acknowledgements
+## Acknowledgements
 
 * OpenAI for language & vision models
 * aiogram for Telegram bot framework
