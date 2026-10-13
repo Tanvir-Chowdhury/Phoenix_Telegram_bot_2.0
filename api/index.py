@@ -1,4 +1,5 @@
 # Import necessary modules
+import os
 import logging
 import asyncio
 from aiogram import Bot, Dispatcher, Router, types
@@ -25,12 +26,12 @@ def keep_alive():
     server = Thread(target=run)
     server.start()
 
-# Bot and OpenAI API keys
-TELEGRAM_TOKEN = "8078701645:AAGI970Rw9krnbfHRr-4DTh8wdQRo1vLZM4" 
-OPENAI_API_KEY = "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"  
+# Bot and OpenAI API keys, read from the environment so they never live in the repo
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
 
 if not TELEGRAM_TOKEN or not OPENAI_API_KEY:
-    raise ValueError("Please set TELEGRAM_TOKEN and OPENAI_API_KEY in the script.")
+    raise ValueError("Please set the TELEGRAM_TOKEN and OPENAI_API_KEY environment variables.")
 
 # Keep the Flask app alive
 keep_alive()

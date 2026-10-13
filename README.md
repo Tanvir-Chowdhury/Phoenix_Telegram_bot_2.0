@@ -110,14 +110,22 @@ This starts the Flask health server on port `8080` and begins polling Telegram. 
 
 ## Configuration
 
-The bot reads two settings, defined as constants near the top of `api/index.py`:
+The bot reads two environment variables (see `.env.example`):
 
 | Name | Purpose |
 |---|---|
 | `TELEGRAM_TOKEN` | Telegram Bot API token |
 | `OPENAI_API_KEY` | OpenAI API key |
 
-Keep real keys out of version control. Loading them from environment variables of the same name (for example with `os.environ`) is the recommended setup.
+Set them in your shell or hosting dashboard before starting the bot, for example:
+
+```bash
+export TELEGRAM_TOKEN=your-telegram-bot-token
+export OPENAI_API_KEY=your-openai-api-key
+python api/index.py
+```
+
+The bot exits with an error if either one is missing.
 
 ## Deployment
 
