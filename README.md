@@ -1,199 +1,143 @@
-# Phoenix Telegram Bot
+<div align="center">
 
-Phoenix Telegram Bot is a Telegram-based doubt-solving assistant built for **Phoenix Education / Phoenix Admission Care**.
-The bot is designed to help students preparing for **Private University Admission Tests in Bangladesh**, especially in subjects like **Math, English, Analytical Ability, and General Knowledge**.
+# Phoenix Telegram Bot 2.0
 
-Students can mention this bot in Telegram groups to ask questions, clear doubts and even submit images of questions for explanation.
+**A 24/7 AI study companion on Telegram that answers admission-test doubts, including photos of questions, for students in Bangladesh.**
 
----
+[![Client Project](https://img.shields.io/badge/Client_Project-Phoenix_Admission_Care-F97316?style=for-the-badge&labelColor=0A0A12)](#the-problem)
+[![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white&labelColor=0A0A12)](https://www.python.org/)
+[![aiogram](https://img.shields.io/badge/aiogram-3.17-26A5E4?style=for-the-badge&logo=telegram&logoColor=white&labelColor=0A0A12)](https://docs.aiogram.dev/)
+[![OpenAI](https://img.shields.io/badge/OpenAI-gpt--4o--mini-412991?style=for-the-badge&logo=openai&logoColor=white&labelColor=0A0A12)](https://platform.openai.com/)
+[![Flask](https://img.shields.io/badge/Flask-3.1-000000?style=for-the-badge&logo=flask&logoColor=white&labelColor=0A0A12)](https://flask.palletsprojects.com/)
+[![Vercel](https://img.shields.io/badge/Vercel-deployed-000000?style=for-the-badge&logo=vercel&logoColor=white&labelColor=0A0A12)](https://phoenix-telegram-bot-2-0-btt1.vercel.app)
 
-## Project Overview
+[Live deployment](https://phoenix-telegram-bot-2-0-btt1.vercel.app) · [How it works](#how-it-works) · [Getting started](#getting-started)
 
-* **Bot Name:** Phoenix
-* **Platform:** Telegram
-* **Target Users:** Admission test candidates of private universities in Bangladesh
-* **Purpose:**
-
-  * Act as a **24/7 doubt-solving partner**
-  * Assist students with **admission-related academic questions**
-  * Provide quick explanations in **simple, student-friendly language**
-  * Analyze **images of questions** and give step-by-step answers
-
-Phoenix behaves like a **helpful human friend**, not a formal assistant or AI, making learning more comfortable for students.
+</div>
 
 ---
 
-## Key Features
+## The problem
 
-### Telegram Bot Integration
+Students preparing for **private university admission tests in Bangladesh** get stuck on questions at all hours, and mentors cannot answer every doubt in real time. **Phoenix Education / Phoenix Admission Care** needed a helper that lives where students already are (Telegram), answers instantly, and explains things the way a senior student would.
 
-* Works in **Telegram groups**
-* Students can mention the bot and ask questions
+**Phoenix** is that helper: a Telegram bot that solves Math, English, Analytical Ability and General Knowledge questions in plain, friendly language, from either typed text or a photo of the question.
 
-### Subject-wise Assistance
+## Key features
 
-* Mathematics (Admission-level problems)
-* English (Grammar, vocabulary, comprehension)
-* Logical & Analytical questions
-* General admission guidance
+| | Feature | Details |
+|---|---|---|
+| 💬 | **Text doubt solving** | Answers admission-related questions with `gpt-4o-mini`, guided by a custom persona prompt |
+| 📸 | **Image question solving** | Accepts photos or image documents, sends them to the OpenAI vision endpoint, and uses the caption as the question |
+| 🧠 | **Per-user conversation memory** | Keeps chat history per Telegram username so students can ask follow-ups |
+| 🧑‍🎓 | **Human-like persona** | Introduces itself as Phoenix, speaks like a helpful senior, and solves math without LaTeX so answers read cleanly in Telegram |
+| 🔁 | **Retry on vision calls** | Image requests are attempted up to 3 times |
+| ⌨️ | **Typing indicator** | Shows "typing..." while an answer is being generated |
+| 🌐 | **Health endpoint** | A small Flask server responds on `/` with a status message |
 
-### Image-Based Question Solving
+### Bot commands
 
-* Students can send **photos or scanned questions**
-* The bot analyzes the image and explains the solution
+| Command | Description |
+|---|---|
+| `/phoenix` | Start a fresh chat with Phoenix |
+| `/help` | List available commands |
+| `/clear_cache` | Clear your conversation history |
 
-### Conversational Memory
+## How it works
 
-* Maintains **chat history per user**
-* Allows contextual follow-up questions
-* `/clear_cache` command resets conversation
+The bot uses **aiogram 3** with long polling: on startup it deletes any existing webhook, then pulls updates from Telegram and routes them through a single router.
 
-### Human-like Personality
+```mermaid
+flowchart LR
+    U[Student on Telegram] -->|text or photo| TG[Telegram Bot API]
+    TG -->|long polling| B[aiogram Dispatcher and Router]
+    B -->|/phoenix /help /clear_cache| C[Command handlers]
+    B -->|message| H{Photo or document?}
+    H -->|No| T[Append to user history]
+    T --> O1[OpenAI chat completions<br/>gpt-4o-mini + persona + history]
+    H -->|Yes| D[Download file and Base64 encode]
+    D --> O2[OpenAI vision request<br/>gpt-4o-mini, up to 3 attempts]
+    O1 --> R[Save reply to history]
+    O2 --> R
+    R -->|Markdown reply| TG
+    TG --> U
+```
 
-* Friendly tone
-* Simple explanations
-* No AI disclosure
-* Acts as a senior helping junior students
+## Tech stack
 
-### Web Server Keep-Alive
+| Layer | Technology |
+|---|---|
+| Language | Python |
+| Telegram framework | aiogram 3.17 (async, Router based) |
+| AI model | OpenAI `gpt-4o-mini` (chat + vision) via `openai` 1.59 |
+| Image handling | Telegram file download + Base64 data URL |
+| Health / keep-alive server | Flask 3.1 on a background thread (port 8080) |
+| Deployment config | Vercel (`vercel.json`), Render (`render.yaml`) |
 
-* Flask server ensures bot stays alive on cloud platforms
+## Project structure
 
----
+```
+Phoenix_Telegram_bot_2.0/
+├── api/
+│   └── index.py        # Bot, handlers, OpenAI calls and Flask app
+├── requirements.txt    # Pinned Python dependencies
+├── vercel.json         # Rewrites all routes to /api/index
+├── render.yaml         # Render web service definition
+└── README.md
+```
 
-## Tech Stack
+## Getting started
 
-| Component            | Technology              |
-| -------------------- | ----------------------- |
-| Programming Language | Python                  |
-| Bot Framework        | aiogram                 |
-| AI Engine            | OpenAI API              |
-| Image Processing     | Base64 Encoding         |
-| Web Server           | Flask                   |
-| Async Handling       | asyncio                 |
-| Hosting Support      | Thread-based keep-alive |
+### Prerequisites
 
----
+- Python 3
+- A Telegram bot token from [@BotFather](https://t.me/BotFather)
+- An OpenAI API key with access to `gpt-4o-mini`
 
-## Project Structure
-
-> All logic is handled inside a single Python file for simplicity and easy deployment.
-
----
-
-## Environment Setup
-
-### 1️⃣ Install Dependencies
+### Run locally
 
 ```bash
-pip install aiogram flask openai pillow requests
+git clone https://github.com/Tanvir-Chowdhury/Phoenix_Telegram_bot_2.0.git
+cd Phoenix_Telegram_bot_2.0
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python api/index.py
 ```
 
-### 2️⃣ Set API Keys
+This starts the Flask health server on port `8080` and begins polling Telegram. Open your bot in Telegram and send `/phoenix`.
 
-Inside the code, provide:
+> Note: Telegram users need a username set, since conversation history is keyed by username.
 
-```python
-TELEGRAM_TOKEN = "YOUR_TELEGRAM_BOT_TOKEN"
-OPENAI_API_KEY = "YOUR_OPENAI_API_KEY"
-```
+## Configuration
 
-⚠️ **Important:**
-Never expose API keys publicly in production. Use environment variables instead.
+The bot reads two settings, defined as constants near the top of `api/index.py`:
 
----
+| Name | Purpose |
+|---|---|
+| `TELEGRAM_TOKEN` | Telegram Bot API token |
+| `OPENAI_API_KEY` | OpenAI API key |
 
-## How to Run the Bot
+Keep real keys out of version control. Loading them from environment variables of the same name (for example with `os.environ`) is the recommended setup.
 
-```bash
-python main.py
-```
+## Deployment
 
-Once running:
+The repo ships config for two platforms:
 
-* Flask server runs on port **8080**
-* Telegram bot starts polling automatically
+- **Vercel** (`vercel.json`): rewrites every route to `api/index`, which exposes the Flask `app`. Live at [phoenix-telegram-bot-2-0-btt1.vercel.app](https://phoenix-telegram-bot-2-0-btt1.vercel.app).
+- **Render** (`render.yaml`): a Python web service that runs `pip install -r requirements.txt` and starts with `uvicorn api.index:app --host 0.0.0.0 --port 8000`.
 
----
+Because the bot uses long polling, it needs a long-running process (`python api/index.py`) to keep answering messages.
 
-## Bot Commands
+## Limitations
 
-| Command        | Description                 |
-| -------------- | --------------------------- |
-| `/phoenix`     | Start chatting with the bot |
-| `/help`        | Show available commands     |
-| `/clear_cache` | Clear chat history          |
+- Conversation history lives in memory and resets when the process restarts.
+- Image answers depend on photo clarity.
+- Image requests are answered from the image and caption only, not prior history.
+- OpenAI usage is billed per request.
 
----
+## Author
 
-## How the Bot Works
+Built by **Md Tanvir Chowdhury** for Phoenix Education / Phoenix Admission Care.
 
-1. User sends a **text or image**
-2. Message is stored in a **user-specific memory**
-3. OpenAI processes:
-
-   * Text-based queries
-   * Image + text queries (Vision)
-4. Bot replies in **simple, admission-focused language**
-5. Chat history is updated for better follow-up responses
-
----
-
-## Image Question Flow
-
-* Student uploads a photo of a question
-* Bot:
-
-  * Converts image to Base64
-  * Sends it with the question prompt
-  * Receives explanation from OpenAI
-* Returns a **clear, readable solution**
-
----
-
-## Use Case Example
-
-> A student sends:
->
-> * “Solve this math question” + image
-> * Bot explains step by step without using LaTeX
-> * Student asks a follow-up question
-> * Bot continues from previous context
-
-This makes Phoenix a true **study companion**, not just a Q&A bot.
-
----
-
-## Organization Behind the Project
-
-**Phoenix Education**
-An education-focused initiative helping Bangladeshi students prepare for private university admission tests through guidance, mentoring, and providing resources.
-
----
-
-## ⚠️ Limitations
-
-* Not intended for public exam cheating
-* Responses depend on image clarity
-* Requires active internet connection
-* API usage cost depends on OpenAI plan
-
----
-
-## Future Improvements
-
-* Subject-specific modes (Math-only, English-only)
-* Admin broadcast system
-* Daily practice questions
-* Leaderboard & quizzes
-* Bengali language support
-
----
-
-## Acknowledgements
-
-* OpenAI for language & vision models
-* aiogram for Telegram bot framework
-* Phoenix Education students for inspiration
-
----
+[![GitHub](https://img.shields.io/badge/GitHub-Tanvir--Chowdhury-181717?style=for-the-badge&logo=github&logoColor=white&labelColor=0A0A12)](https://github.com/Tanvir-Chowdhury)
+[![Portfolio](https://img.shields.io/badge/Portfolio-Visit-F97316?style=for-the-badge&logo=googlechrome&logoColor=white&labelColor=0A0A12)](https://tanvir-chowdhury.github.io/tanvir-portfolio/)
